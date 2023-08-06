@@ -4,7 +4,7 @@ from fastapi import Body, Depends, FastAPI
 
 from app.db.repositories.json_dump_repository import JSONDumpRepository
 from app.lifespan import lifespan
-from app.models.JSONDumpDTO import JSONDumpDTO, JSONDumpDTOs
+from app.models.json_dump_dto import JSONDumpDTO, JSONDumpDTOs
 
 
 def create_app() -> FastAPI:

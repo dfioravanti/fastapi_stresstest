@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.db.connection import get_db_sess
 from app.db.models.json_dump import JSONDump
-from app.models.JSONDumpDTO import JSONDumpDTO, JSONDumpDTOs
+from app.models.json_dump_dto import JSONDumpDTO, JSONDumpDTOs
 
 
 class JSONDumpRepository:

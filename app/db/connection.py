@@ -8,11 +8,11 @@ from app.envs import DB_MAX_OVERFLOW, DB_POOL_SIZE, DB_URI
 _db_engine: Optional[AsyncEngine]
 
 
-def _open_database_connection_pools():
+async def open_database_connection_pools(db_uri=DB_URI):
     global _db_engine
 
     _db_engine = create_async_engine(
-        DB_URI,
+        db_uri,
         pool_size=DB_POOL_SIZE,
         max_overflow=DB_MAX_OVERFLOW,
         pool_recycle=3600,
@@ -20,14 +20,14 @@ def _open_database_connection_pools():
     )
 
 
-def _close_database_connection_pools():
+async def close_database_connection_pools():
     global _db_engine
 
     if _db_engine:
-        _db_engine.dispose()
+        await _db_engine.dispose()
 
 
-def get_db_conn() -> AsyncEngine:
+async def get_db_conn() -> AsyncEngine:
     if _db_engine is None:
         raise ValueError("Impossible to connect to database since the connection pool is not initialised")
     return _db_engine
