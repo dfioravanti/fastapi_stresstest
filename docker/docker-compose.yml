@@ -1,0 +1,43 @@
+# docker-compose.yml
+
+version: '3.8'
+
+services:
+  migration:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    entrypoint: /bin/bash
+    command: -c 'while !</dev/tcp/db/5432; do sleep 1; done; alembic upgrade head'
+    environment:
+      - DB_URI=postgresql://fastapi_traefik:fastapi_traefik@db:5432/fastapi_traefik
+    depends_on:
+      - db
+  web:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    entrypoint: /bin/bash
+    command:  -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --host 0.0.0.0'
+    ports:
+      - "8008:8000"
+    environment:
+      - DB_URI=postgresql://fastapi_traefik:fastapi_traefik@db:5432/fastapi_traefik
+    depends_on:
+      - db
+      - migration
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    expose:
+      - 5432
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=fastapi_traefik
+      - POSTGRES_PASSWORD=fastapi_traefik
+      - POSTGRES_DB=fastapi_traefik
+
+volumes:
+  postgres_data:

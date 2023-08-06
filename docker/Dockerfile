@@ -59,6 +59,9 @@ ENV FASTAPI_ENV=production
 
 WORKDIR $WORKDIR
 
+RUN groupadd -g 999 notroot && \
+    useradd -r -u 999 -g notroot notroot
+
 COPY --chown=notroot:notroot --from=builder-base $VENV_PATH $VENV_PATH
 COPY --chown=notroot:notroot  ./ ./
 

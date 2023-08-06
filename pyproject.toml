@@ -4,12 +4,15 @@ version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-packages = [{include = "fastapi_stresstest"}]
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
 fastapi = "^0.101.0"
 sqlalchemy = "^2.0.19"
+alembic = "^1.11.2"
+uvicorn = "^0.23.2"
+psycopg2-binary = "^2.9.6"
 
 
 [tool.poetry.group.test.dependencies]
@@ -23,3 +26,10 @@ black = "^23.7.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
