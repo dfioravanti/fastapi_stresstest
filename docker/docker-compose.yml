@@ -13,12 +13,13 @@ services:
       - DB_URI=postgresql://fastapi_traefik:fastapi_traefik@db:5432/fastapi_traefik
     depends_on:
       - db
-  web:
+    networks:
+      - web
+
+  fastapi:
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    entrypoint: /bin/bash
-    command:  -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --host 0.0.0.0'
     ports:
       - "8008:8000"
     environment:
@@ -26,6 +27,9 @@ services:
     depends_on:
       - db
       - migration
+    networks:
+      - web
+
   db:
     image: postgres:15-alpine
     volumes:
@@ -38,6 +42,27 @@ services:
       - POSTGRES_USER=fastapi_traefik
       - POSTGRES_PASSWORD=fastapi_traefik
       - POSTGRES_DB=fastapi_traefik
+    networks:
+      - web
+
+
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - web
 
 volumes:
   postgres_data:
+
+networks:
+  web:
+

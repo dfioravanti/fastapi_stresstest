@@ -1,26 +1,29 @@
-from typing import List, Dict, Annotated
+from typing import Dict, Optional
 
-from fastapi import Depends
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from app.db.connection import get_db_sess
 from app.db.models.json_dump import JSONDump
+from app.models.JSONDumpDTO import JSONDumpDTO, JSONDumpDTOs
 
 
 class JSONDumpRepository:
-    def get_all(self) -> List[JSONDump]:
+    def get_all(self) -> JSONDumpDTOs:
         with get_db_sess() as session:
             stmt = select(JSONDump)
-            return list(session.execute(stmt).scalars())
+            dumps = list(session.execute(stmt).scalars())
+            return [JSONDumpDTO(id=dump.id, data=dump.data) for dump in dumps]
 
-    def get_by_id(self, dump_id: int) -> JSONDump:
+    def get_by_id(self, dump_id: int) -> Optional[JSONDumpDTO]:
         with get_db_sess() as session:
             stmt = select(JSONDump).where(JSONDump.id == dump_id)
-            return session.execute(stmt).scalar_one_or_none()
+            dump = session.execute(stmt).scalar_one_or_none()
+            if dump is None:
+                return None
+            else:
+                return JSONDumpDTO(id=dump.id, data=dump.data)
 
     def add(self, data: Dict[str, str]):
         with get_db_sess() as session:
             entry = JSONDump(data=data)
             session.add(entry)
-            session.commit()

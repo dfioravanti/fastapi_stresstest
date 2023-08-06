@@ -1,44 +1,55 @@
-from typing import AsyncIterable, Optional, Annotated, ContextManager
+from typing import Optional, ContextManager
 
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
 
 from app.envs import DB_URI
 
-_db_conn: Optional[Engine]
+_db_engine: Optional[Engine]
 
 
 def _open_database_connection_pools():
-    global _db_conn
-    _db_conn = create_engine(DB_URI)
+    global _db_engine
+
+    _db_engine = create_engine(
+        DB_URI,
+        pool_recycle=3600,
+        pool_pre_ping=True,
+    )
 
 
 def _close_database_connection_pools():
-    global _db_conn
-    if _db_conn:
-        _db_conn.dispose()
+    global _db_engine
+
+    if _db_engine:
+        _db_engine.dispose()
 
 
-def set_up_postgres(app: FastAPI):
-    app.add_event_handler("startup", _open_database_connection_pools)
-    app.add_event_handler("shutdown", _close_database_connection_pools)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    _open_database_connection_pools()
+    yield
+    _close_database_connection_pools()
 
 
 def get_db_conn() -> Engine:
-    if _db_conn is None:
+    if _db_engine is None:
         raise ValueError("Impossible to connect to database since the connection pool is not initialised")
-    return _db_conn
+    return _db_engine
 
 
-# This is the part that replaces sessionmaker
 @contextmanager
 def get_db_sess() -> ContextManager[Session]:
-    sess = Session(bind=get_db_conn())
+    session = Session(bind=_db_engine, autocommit=False, autoflush=False)
 
     try:
-        yield sess
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
     finally:
-        sess.close()
+        session.close()
