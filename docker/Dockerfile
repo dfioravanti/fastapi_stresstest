@@ -67,4 +67,4 @@ COPY --chown=notroot:notroot  ./ ./
 
 USER notroot
 
-ENTRYPOINT ["gunicorn", "app.main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0"]
+ENTRYPOINT ["gunicorn", "app.main:app", "--workers", "5", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0"]

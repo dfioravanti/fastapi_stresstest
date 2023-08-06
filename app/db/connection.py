@@ -1,21 +1,20 @@
-from typing import Optional, ContextManager
+from contextlib import asynccontextmanager
+from typing import AsyncContextManager, Optional
 
-from fastapi import FastAPI
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session
-from contextlib import contextmanager, asynccontextmanager
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
-from app.envs import DB_URI
+from app.envs import DB_MAX_OVERFLOW, DB_POOL_SIZE, DB_URI
 
-_db_engine: Optional[Engine]
+_db_engine: Optional[AsyncEngine]
 
 
 def _open_database_connection_pools():
     global _db_engine
 
-    _db_engine = create_engine(
+    _db_engine = create_async_engine(
         DB_URI,
+        pool_size=DB_POOL_SIZE,
+        max_overflow=DB_MAX_OVERFLOW,
         pool_recycle=3600,
         pool_pre_ping=True,
     )
@@ -28,28 +27,21 @@ def _close_database_connection_pools():
         _db_engine.dispose()
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    _open_database_connection_pools()
-    yield
-    _close_database_connection_pools()
-
-
-def get_db_conn() -> Engine:
+def get_db_conn() -> AsyncEngine:
     if _db_engine is None:
         raise ValueError("Impossible to connect to database since the connection pool is not initialised")
     return _db_engine
 
 
-@contextmanager
-def get_db_sess() -> ContextManager[Session]:
-    session = Session(bind=_db_engine, autocommit=False, autoflush=False)
+@asynccontextmanager
+async def get_db_sess() -> AsyncContextManager[AsyncSession]:
+    session = AsyncSession(bind=_db_engine, autocommit=False, autoflush=False)
 
     try:
         yield session
-        session.commit()
+        await session.commit()
     except Exception:
-        session.rollback()
+        await session.rollback()
         raise
     finally:
-        session.close()
+        await session.close()

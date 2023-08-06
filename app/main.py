@@ -1,9 +1,9 @@
 from typing import Any, Optional
 
-from fastapi import FastAPI, Depends, Body
+from fastapi import Body, Depends, FastAPI
 
-from app.db.connection import lifespan
 from app.db.repositories.json_dump_repository import JSONDumpRepository
+from app.lifespan import lifespan
 from app.models.JSONDumpDTO import JSONDumpDTO, JSONDumpDTOs
 
 
@@ -22,7 +22,7 @@ async def health():
 
 @app.get("/dumps")
 async def read_dump(dump_repository: JSONDumpRepository = Depends(JSONDumpRepository)) -> JSONDumpDTOs:
-    return dump_repository.get_all()
+    return await dump_repository.get_all()
 
 
 @app.get("/dumps/{dump_id}")
@@ -30,9 +30,9 @@ async def read_one_dump(
     dump_id: Optional[int] = None,
     dump_repository: JSONDumpRepository = Depends(JSONDumpRepository),
 ) -> Optional[JSONDumpDTO]:
-    return dump_repository.get_by_id(dump_id=dump_id)
+    return await dump_repository.get_by_id(dump_id=dump_id)
 
 
 @app.post("/dumps")
 async def write_dump(payload: Any = Body(...), dump_repository: JSONDumpRepository = Depends(JSONDumpRepository)):
-    return dump_repository.add(data=payload)
+    return await dump_repository.add(data=payload)
